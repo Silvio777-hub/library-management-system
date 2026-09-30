@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ============================================================
+    A Desktop application for Library Management System
+    Course Module: Automated Software Testing Course 2024/2025
+    By: Opoka JM Silvio
+    ============================================================
+
+    Java 17, plain JDBC, PostgreSQL, Swing UI.
+
+    Dev workflow:      mvn test              -> unit tests only
+    Pre-push:          mvn verify            -> unit + integration tests
+    Submission / CI:   mvn -Pstrict verify   -> + 100% coverage gate + mutation tests
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.library</groupId>
+	<artifactId>LibraryManagementSystem</artifactId>
+	<version>0.0.1</version>
+	<packaging>jar</packaging>
+
+	<!--
+        ============================================================
+        PROPERTIES
+        ============================================================
+    -->
+	<properties>
+		<maven.compiler.release>17</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<junit.version>5.10.0</junit.version>
+		<mockito.version>5.6.0</mockito.version>
+		<assertj.version>3.25.3</assertj.version>
+		<assertj.swing.version>3.17.1</assertj.swing.version>
+
+		<postgresql.version>42.6.0</postgresql.version>
+		<testcontainers.version>1.19.3</testcontainers.version>
+
+		<guice.version>7.0.0</guice.version>
+		<bcrypt.version>0.4</bcrypt.version>
+
+		<cucumber.version>7.14.0</cucumber.version>
+
+		<jacoco.version>0.8.11</jacoco.version>
+		<pitest.version>1.15.0</pitest.version>
+		<pitest.junit5.version>1.2.1</pitest.junit5.version>
+	</properties>
+
+	<!--
+        ============================================================
+        TESTCONTAINERS BOM
+        ============================================================
+    -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${testcontainers.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<!--
+        ============================================================
+        DEPENDENCIES
+        ============================================================
+    -->
+	<dependencies>
+
+		<!-- Runtime: PostgreSQL JDBC driver -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
+		</dependency>
+
+		<!-- Runtime: Google Guice for dependency injection -->
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>${guice.version}</version>
+		</dependency>
+
+		<!-- Runtime: BCrypt for password hashing -->
+		<dependency>
+			<groupId>org.mindrot</groupId>
+			<artifactId>jbcrypt</artifactId>
+			<version>${bcrypt.version}</version>
+		</dependency>
+
+		<!-- Unit testing: JUnit 5 -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Unit testing: Mockito -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Unit testing: AssertJ core -->
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>${assertj.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Integration testing: Testcontainers -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- UI testing: AssertJ Swing -->
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-swing-junit</artifactId>
+			<version>${assertj.swing.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- BDD testing: Cucumber -->
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-java</artifactId>
+			<version>${cucumber.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-junit-platform-engine</artifactId>
+			<version>${cucumber.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.cucumber</groupId>
+			<artifactId>cucumber-picocontainer</artifactId>
+			<version>${cucumber.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Mutation testing: PIT JUnit 5 plugin -->
+		<dependency>
+			<groupId>org.pitest</groupId>
+			<artifactId>pitest-junit5-plugin</artifactId>
+			<version>${pitest.junit5.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<!--
+        ============================================================
+        BUILD
+        ============================================================
+    -->
+	<build>
+		<plugins>
+
+			<!-- Compiler: Java 17 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<release>17</release>
+				</configuration>
+			</plugin>
+
+			<!-- Surefire: runs *Test.java, excludes *IT.java -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.1.2</version>
+				<configuration>
+					<useModulePath>false</useModulePath>
+					<excludes>
+						<exclude>**/*IT.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+			<!-- Failsafe: runs *IT.java during mvn verify -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>3.1.2</version>
+				<configuration>
+					<includes>
+						<include>**/*IT.java</include>
+					</includes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- JaCoCo: collect coverage + HTML report (no gate here) -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+
+	<!--
+        ============================================================
+        PROFILES
+        ============================================================
+    -->
+	<profiles>
+
+		<!--
+            strict profile: submission / CI gate
+            Usage: mvn -Pstrict verify
+
+            Enforces:
+              1. JaCoCo: 100% LINE + 100% BRANCH (UI excluded)
+              2. PIT: mutation coverage on domain + service
+        -->
+		<profile>
+			<id>strict</id>
+			<build>
+				<plugins>
+
+					<!-- JaCoCo gate: 100% line + 100% branch -->
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<version>${jacoco.version}</version>
+						<executions>
+							<execution>
+								<id>check</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>check</goal>
+								</goals>
+								<configuration>
+									<rules>
+										<rule>
+											<element>BUNDLE</element>
+											<limits>
+												<limit>
+													<counter>LINE</counter>
+													<value>COVEREDRATIO</value>
+													<minimum>1.00</minimum>
+												</limit>
+												<limit>
+													<counter>BRANCH</counter>
+													<value>COVEREDRATIO</value>
+													<minimum>1.00</minimum>
+												</limit>
+											</limits>
+										</rule>
+									</rules>
+									<!--
+                                        Excluded from coverage because JaCoCo cannot measure them:
+                                        UI frames and panels (tested via AssertJ Swing),
+                                        the Main entry point, and Guice modules.
+                                    -->
+									<excludes>
+										<exclude>**/ui/**</exclude>
+										<exclude>**/*Frame*</exclude>
+										<exclude>**/*Panel*</exclude>
+										<exclude>**/Main.class</exclude>
+										<exclude>**/*Module.class</exclude>
+									</excludes>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+
+					<!-- PIT: mutation coverage on business logic -->
+					<plugin>
+						<groupId>org.pitest</groupId>
+						<artifactId>pitest-maven</artifactId>
+						<version>${pitest.version}</version>
+						<executions>
+							<execution>
+								<phase>verify</phase>
+								<goals>
+									<goal>mutationCoverage</goal>
+								</goals>
+							</execution>
+						</executions>
+						<!-- Moved from inside <configuration> to standard Maven
+						plugin <dependencies> -->
+						<dependencies>
+							<dependency>
+								<groupId>org.pitest</groupId>
+								<artifactId>pitest-junit5-plugin</artifactId>
+								<version>${pitest.junit5.version}</version>
+							</dependency>
+						</dependencies>
+						<configuration>
+							<threads>4</threads>
+							<targetClasses>
+								<param>com.library.domain.*</param>
+								<param>com.library.service.*</param>
+							</targetClasses>
+							<targetTests>
+								<param>com.library.*</param>
+							</targetTests>
+						</configuration>
+					</plugin>
+
+				</plugins>
+			</build>
+		</profile>
+
+	</profiles>
+
+</project>
