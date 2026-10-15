@@ -2,6 +2,7 @@ package com.library.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 /**
  * A loan of one book to one student.
@@ -12,18 +13,21 @@ public record Loan(String id, String bookId, StudentRegistrationNumber studentRe
 	public static final BigDecimal FINE_PER_DAY = new BigDecimal("0.50");
 
 	/**
-	 * Returns true when the loan is active and past its due date. STUB - always
-	 * returns false, so the RED test fails on purpose.
+	 * Returns true when the loan is active and past its due date.
 	 */
 	public boolean isOverdue(LocalDate today) {
-		return false;
+		return status == LoanStatus.ACTIVE && today.isAfter(dueAt);
 	}
 
 	/**
-	 * Calculates the fine for a late return: daysLate * FINE_PER_DAY. STUB - always
-	 * returns zero, so the RED test fails on purpose.
+	 * Calculates the fine for a late return: daysLate * FINE_PER_DAY. Returns zero
+	 * if returned on or before the due date.
 	 */
 	public BigDecimal calculateFine(LocalDate returnDate) {
-		return BigDecimal.ZERO;
+		if (!returnDate.isAfter(dueAt)) {
+			return BigDecimal.ZERO;
+		}
+		long daysLate = ChronoUnit.DAYS.between(dueAt, returnDate);
+		return FINE_PER_DAY.multiply(BigDecimal.valueOf(daysLate));
 	}
 }
