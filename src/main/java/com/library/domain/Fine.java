@@ -10,10 +10,9 @@ public record Fine(String id, String loanId, BigDecimal amount, FineStatus statu
 		LocalDate paidAt) {
 
 	/**
-	 * Returns true when this fine has been fully settled. STUB - always returns
-	 * false, so the RED test fails on purpose.
+	 * Returns true when this fine has been fully settled.
 	 */
 	public boolean isSettled() {
-		return false;
+		return status == FineStatus.PAID || status == FineStatus.WAIVED;
 	}
 }
