@@ -54,7 +54,7 @@ class PostgresTransactionManagerTest {
 				ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM test_table")) {
 			rs.next();
 			int count = rs.getInt(1);
-			assertThat(count).isEqualTo(0);
+			assertThat(count).isZero(); // <--- Fixed Sonar warning here
 		}
 	}
 }
