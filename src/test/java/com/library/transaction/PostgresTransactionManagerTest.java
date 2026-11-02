@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -24,12 +25,12 @@ class PostgresTransactionManagerTest {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		connectionFactory = () -> java.sql.DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
+		connectionFactory = () -> DriverManager.getConnection(postgres.getJdbcUrl(), postgres.getUsername(),
 				postgres.getPassword());
 
 		txManager = new PostgresTransactionManager(connectionFactory);
 
-		// Create a test table
+		// Arrange: Create a clean test table for each test run
 		try (Connection conn = connectionFactory.getConnection(); Statement stmt = conn.createStatement()) {
 			stmt.execute("DROP TABLE IF EXISTS test_table");
 			stmt.execute("CREATE TABLE test_table (id VARCHAR(10) PRIMARY KEY)");
@@ -38,7 +39,7 @@ class PostgresTransactionManagerTest {
 
 	@Test
 	void whenCodeFails_thenRollbackOccurs() throws Exception {
-		// Act: Try to insert, but then throw a RuntimeException
+		// Act: Execute a transaction that inserts a row, but then throws an exception
 		assertThrows(RuntimeException.class, () -> {
 			txManager.doInTransaction(conn -> {
 				try (Statement stmt = conn.createStatement()) {
@@ -53,8 +54,8 @@ class PostgresTransactionManagerTest {
 				Statement stmt = conn.createStatement();
 				ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM test_table")) {
 			rs.next();
-			int count = rs.getInt(1);
-			assertThat(count).isEqualTo(0);
+			long count = rs.getLong(1);
+			assertThat(count).isZero();
 		}
 	}
 }
