@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.Statement;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.library.domain.StudentRegistrationNumber;
+import com.library.domain.Role;
+import com.library.domain.User;
 
 @Testcontainers
 class PostgresUserRepositoryTest {
@@ -31,21 +32,27 @@ class PostgresUserRepositoryTest {
 	}
 
 	@Test
-	void exists_returnsTrueForExistingUser() throws Exception {
-		try (Statement stmt = conn.createStatement()) {
-			stmt.execute(
-					"INSERT INTO app_user (registration_number, full_name, role, active) VALUES ('7172981', 'Silvio', 'STUDENT', true)");
-		}
+	void saveAndFindByUsername_worksCorrectly() throws Exception {
+		// Arrange
+		User user = new User("admin", "hashed_password", Role.ADMIN, true, false);
 
-		boolean exists = repository.exists(conn, new StudentRegistrationNumber("7172981"));
+		// Act
+		repository.save(conn, user);
+		Optional<User> loaded = repository.findByUsername(conn, "admin");
 
-		assertThat(exists).isTrue();
+		// Assert
+		assertThat(loaded).isPresent();
+		assertThat(loaded.get().username()).isEqualTo("admin");
+		assertThat(loaded.get().role()).isEqualTo(Role.ADMIN);
+		assertThat(loaded.get().active()).isTrue();
 	}
 
 	@Test
-	void exists_returnsFalseForMissingUser() throws Exception {
-		boolean exists = repository.exists(conn, new StudentRegistrationNumber("9999999"));
+	void findByUsername_whenMissing_thenReturnsEmpty() throws Exception {
+		// Act
+		Optional<User> loaded = repository.findByUsername(conn, "unknown_user");
 
-		assertThat(exists).isFalse();
+		// Assert
+		assertThat(loaded).isEmpty();
 	}
 }
