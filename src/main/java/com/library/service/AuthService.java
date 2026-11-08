@@ -17,6 +17,18 @@ public class AuthService {
 	}
 
 	public User login(String username, String password) {
-		throw new UnsupportedOperationException("Not implemented yet");
+		return txManager.doInTransaction(conn -> {
+			User user = userRepository.findByUsername(conn, username)
+					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+			if (!user.active()) {
+				throw new IllegalArgumentException("User is disabled");
+			}
+
+			// For now, we are just checking if they exist.
+			// In a later PR, we will use BCrypt here to check the password hash.
+
+			return user;
+		});
 	}
 }
