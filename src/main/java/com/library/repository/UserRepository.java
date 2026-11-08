@@ -2,13 +2,12 @@ package com.library.repository;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Optional;
 
-import com.library.domain.StudentRegistrationNumber;
+import com.library.domain.User;
 
-/**
- * Data access for students and staff.
- */
 public interface UserRepository {
+	Optional<User> findByUsername(Connection conn, String username) throws SQLException;
 
-	boolean exists(Connection conn, StudentRegistrationNumber regNo) throws SQLException;
+	void save(Connection conn, User user) throws SQLException;
 }
